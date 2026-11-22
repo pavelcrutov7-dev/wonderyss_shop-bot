@@ -636,24 +636,62 @@ async def credit_referral(bot: Bot, order):
 # ================================================================ user: reviews
 
 
-@router.callback_query(F.data == "reviews")
+@router.callback_query(F.data.startswith("reviews"))
 async def reviews(c: CallbackQuery, state: FSMContext):
     await state.clear()
-    cur = await db.execute("SELECT * FROM reviews WHERE hidden=0 ORDER BY id DESC LIMIT 5")
+    
+    page = 0
+    if ":" in c.data:
+        page = int(c.data.split(":")[1])
+        
+    limit = 5
+    offset = page * limit
+    
+    total_reviews = await one("SELECT COUNT(*) FROM reviews WHERE hidden=0")
+    total_pages = (total_reviews + limit - 1) // limit
+    
+    cur = await db.execute("SELECT * FROM reviews WHERE hidden=0 ORDER BY id DESC LIMIT ? OFFSET ?", (limit, offset))
     rows = await cur.fetchall()
-    text = "💬 <b>Отзывы клиентов</b>\n\n"
+    
+    text = f"💬 <b>Отзывы клиентов</b> (Стр. {page + 1} из {max(total_pages, 1)})\n\n"
     if rows:
         for r in rows:
-            line = f"{'⭐' * r['rating']} <b>{esc(r['name'])}</b>"
+            date_str = ""
+            if r["created"]:
+                try:
+                    dt = datetime.fromisoformat(r["created"])
+                    date_str = f" <i>({dt.strftime('%d.%m.%Y %H:%M')})</i>"
+                except:
+                    pass
+            line = f"{'⭐' * r['rating']} <b>{esc(r['name'])}</b>{date_str}"
             if r["text"]:
                 line += f"\n{esc(r['text'])}"
             text += line + "\n\n"
     else:
         text += "Пока отзывов нет. Будь первым!"
+        
     kb = InlineKeyboardBuilder()
+    
+    nav_buttons = []
+    
+    if page > 0:
+        nav_buttons.append(InlineKeyboardButton(text="<", callback_data=f"reviews:{page - 1}"))
+    else:
+        nav_buttons.append(InlineKeyboardButton(text=" ", callback_data="ignore"))
+        
+    nav_buttons.append(InlineKeyboardButton(text=f"{page + 1} / {max(total_pages, 1)}", callback_data="ignore"))
+    
+    if page < total_pages - 1:
+        nav_buttons.append(InlineKeyboardButton(text=">", callback_data=f"reviews:{page + 1}"))
+    else:
+        nav_buttons.append(InlineKeyboardButton(text=" ", callback_data="ignore"))
+
+    kb.row(*nav_buttons)
+
     url = await get("reviews_url")
     if url:
         kb.button(text="📢 Все отзывы", url=url)
+        
     pending = await one(
         "SELECT id FROM orders WHERE user_id=? AND status='done' "
         "AND id NOT IN (SELECT order_id FROM reviews) ORDER BY id DESC LIMIT 1",
@@ -661,9 +699,15 @@ async def reviews(c: CallbackQuery, state: FSMContext):
     )
     if pending:
         kb.button(text="✍️ Оставить отзыв", callback_data=f"rv:{pending}")
-    kb.button(text="⬅️ Назад", callback_data="menu")
+        
+    kb.button(text="⬅️ В меню", callback_data="menu")
     kb.adjust(1)
     await show(c, text.strip(), kb.as_markup(), img="reviews")
+
+
+@router.callback_query(F.data == "ignore")
+async def ignore_cb(call: CallbackQuery):
+    await call.answer()
 
 
 @router.callback_query(F.data.startswith("rv:"))
