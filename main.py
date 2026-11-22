@@ -316,7 +316,11 @@ async def start(m: Message, state: FSMContext, command: CommandObject):
     if args.startswith("ref_") and args[4:].isdigit():
         ref = int(args[4:])
     await register_user(m.from_user, ref)
-    await show(m, await get("welcome"), await main_kb(), img="menu")
+    welcome_text = await get("welcome")
+    if m.from_user.first_name:
+        safe_name = esc(m.from_user.first_name)
+        welcome_text = f"👋 Привет, <b>{safe_name}</b>!\n\n{welcome_text}"
+    await show(m, welcome_text, await main_kb(), img="menu")
 
 
 @router.callback_query(F.data == "menu")
