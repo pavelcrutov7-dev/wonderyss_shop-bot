@@ -544,20 +544,23 @@ async def profile(c: CallbackQuery, state: FSMContext):
     total = await one("SELECT COUNT(*) FROM orders WHERE user_id=?", (uid,))
     done = await one("SELECT COUNT(*) FROM orders WHERE user_id=? AND status='done'", (uid,))
     balance = await one("SELECT ref_balance FROM users WHERE id=?", (uid,))
+    
     cur = await db.execute("SELECT * FROM orders WHERE user_id=? ORDER BY id DESC LIMIT 5", (uid,))
     rows = await cur.fetchall()
     lines = [
-        f"№{r['id']} · {describe(r['product'] or 'stars', r['stars'])} · {money(r['price'])} · {STATUS[r['status']]}"
+        f"🛍 <b>№{r['id']}</b> · {describe(r['product'] or 'stars', r['stars'])} · {money(r['price'])} · {STATUS[r['status']]}"
         for r in rows
     ]
+    
     text = (
-        "👤 <b>Профиль</b>\n\n"
-        f"ID: <code>{uid}</code>\n"
-        f"Заказов: {total} (выполнено: {done})\n"
-        f"Баланс рефералки: {money(balance)}"
+        "👤 <b>Твой профиль</b>\n\n"
+        f"🆔 ID: <code>{uid}</code>\n"
+        f"📦 Заказов: {total} (✅ выполнено: {done})\n"
+        f"💰 Баланс: <b>{money(balance)}</b>"
     )
     if lines:
-        text += "\n\n<b>Последние заказы:</b>\n" + "\n".join(lines)
+        text += "\n\n📋 <b>Последние заказы:</b>\n" + "\n".join(lines)
+    
     await show(c, text, back_kb(), img="profile")
 
 
@@ -573,16 +576,17 @@ async def ref(c: CallbackQuery, bot: Bot, state: FSMContext):
     invited = await one("SELECT COUNT(*) FROM users WHERE referrer_id=?", (uid,))
     balance = await one("SELECT ref_balance FROM users WHERE id=?", (uid,))
     earned = await one("SELECT ref_earned FROM users WHERE id=?", (uid,))
+    
     text = (
-        "👥 <b>Реферальная программа</b>\n\n"
-        f"Приглашай друзей и получай <b>{await get('ref_percent')}%</b> от каждого их заказа.\n\n"
-        f"🔗 Твоя ссылка:\n<code>{link}</code>\n\n"
-        f"Приглашено: {invited}\n"
-        f"Заработано: {money(earned)}\n"
-        f"Доступно к выводу: <b>{money(balance)}</b>"
+        "🤝 <b>Партнерская программа</b>\n\n"
+        f"Приглашай друзей и получай <b>{await get('ref_percent')}%</b> от их заказов!\n\n"
+        f"🔗 <b>Твоя ссылка:</b>\n<code>{link}</code>\n\n"
+        f"👥 Приглашено: <b>{invited}</b>\n"
+        f"📈 Заработано: {money(earned)}\n"
+        f"💳 К выводу: <b>{money(balance)}</b>"
     )
     kb = InlineKeyboardBuilder()
-    kb.button(text="💸 Вывести", callback_data="wd")
+    kb.button(text="💸 Вывести деньги", callback_data="wd")
     kb.button(text="⬅️ Назад", callback_data="menu")
     kb.adjust(1)
     await show(c, text, kb.as_markup(), img="ref")
