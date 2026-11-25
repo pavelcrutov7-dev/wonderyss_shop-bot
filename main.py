@@ -687,20 +687,24 @@ async def reviews(c: CallbackQuery, state: FSMContext):
         
     kb = InlineKeyboardBuilder()
     
-    nav_buttons = []
+        nav_buttons = []
     
+    # Левая стрелка (если не первая страница)
     if page > 0:
-        nav_buttons.append(InlineKeyboardButton(text="◀️", callback_data=f"reviews:{page - 1}"))
+        nav_buttons.append(InlineKeyboardButton(text="◄", callback_data=f"reviews:{page - 1}"))
     else:
         nav_buttons.append(InlineKeyboardButton(text=" ", callback_data="ignore"))
         
+    # Номер страницы по центру
     nav_buttons.append(InlineKeyboardButton(text=f"{page + 1} / {max(total_pages, 1)}", callback_data="ignore"))
     
+    # Правая стрелка (если есть следующая страница)
     if page < total_pages - 1:
-        nav_buttons.append(InlineKeyboardButton(text="▶️", callback_data=f"reviews:{page + 1}"))
+        nav_buttons.append(InlineKeyboardButton(text="►", callback_data=f"reviews:{page + 1}"))
     else:
         nav_buttons.append(InlineKeyboardButton(text=" ", callback_data="ignore"))
 
+    # Добавляем кнопки листалки в клавиатуру
     kb.row(*nav_buttons)
 
     url = await get("reviews_url")
