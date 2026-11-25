@@ -1081,8 +1081,9 @@ async def hide_review(c: CallbackQuery):
 async def top_buyers(c: CallbackQuery, state: FSMContext):
     await state.clear()
     
+    # Мы берем user_id и сумму, а имя будем искать отдельно
     cur = await db.execute(
-        "SELECT first_name, SUM(price) as total_spent FROM orders "
+        "SELECT user_id, SUM(price) as total_spent FROM orders "
         "WHERE status='done' GROUP BY user_id ORDER BY total_spent DESC LIMIT 5"
     )
     rows = await cur.fetchall()
@@ -1091,7 +1092,13 @@ async def top_buyers(c: CallbackQuery, state: FSMContext):
     if rows:
         medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"]
         for i, r in enumerate(rows):
-            name = r['first_name'] or "Анонимный клиент"
+            # Ищем имя пользователя в таблице users по его ID
+            user_row = await db.execute("SELECT first_name FROM users WHERE id=?", (r['user_id'],))
+            user = await user_row.fetchone()
+            
+            # Если имя есть - берем его, если нет - пишем "Анонимный клиент"
+            name = user['first_name'] if user and user['first_name'] else "Анонимный клиент"
+            
             safe_name = esc(name)
             spent = money(r['total_spent'])
             text += f"{medals[i]} {safe_name} — <b>{spent}</b>\n"
