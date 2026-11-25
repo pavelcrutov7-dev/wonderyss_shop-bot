@@ -245,7 +245,7 @@ async def main_kb():
     
     # Ряд 3: Личное
     kb.button(text="👤 Профиль", callback_data="profile") # Оставили одного человечка
-    kb.button(text="🆘 Поддержка", url=support_url(await get("support")))
+    kb.button(text="🆘 Поддержка", callback_data="support")
     
     # Ряд 4: Отзывы (в самом низу)
     kb.button(text="💬 Отзывы", callback_data="reviews")
@@ -298,6 +298,10 @@ class ImgSet(StatesGroup):
 
 
 class Broadcast(StatesGroup):
+    text = State()
+
+
+class SupportFlow(StatesGroup):
     text = State()
 
 
@@ -1133,6 +1137,51 @@ async def top_buyers(c: CallbackQuery, state: FSMContext):
     kb.button(text="⬅️ Назад", callback_data="menu")
     
     await show(c, text, kb.as_markup(), img="menu")
+
+
+# ================================================================ user: support
+
+@router.callback_query(F.data == "support")
+async def support_start(c: CallbackQuery, state: FSMContext):
+    await state.clear()
+    await state.set_state(SupportFlow.text)
+    kb = InlineKeyboardBuilder()
+    kb.button(text="⬅️ Отмена", callback_data="menu")
+    await show(c, "🆘 <b>Поддержка</b>\n\nНапиши свой вопрос одним сообщением, и мы ответим тебе в ближайшее время:", kb.as_markup())
+
+@router.message(SupportFlow.text)
+async def support_message(m: Message, state: FSMContext, bot: Bot):
+    await state.clear()
+    
+    who = f"@{m.from_user.username}" if m.from_user.username else m.from_user.full_name
+    text_for_admin = (
+        f"📩 <b>Новое сообщение в поддержку!</b>\n"
+        f"От: {esc(who)} (<code>{m.from_user.id}</code>)\n\n"
+        f"{esc(m.text)}"
+    )
+    
+    for aid in ADMIN_IDS:
+        try:
+            await bot.send_message(aid, text_for_admin)
+        except Exception:
+            pass
+            
+    await m.answer("✅ Твой вопрос отправлен в поддержку! Мы ответим тебе здесь же в боте.", reply_markup=await main_kb())
+
+@router.message(F.reply_to_message, F.from_user.id.in_(ADMIN_IDS))
+async def reply_to_user(m: Message, bot: Bot):
+    reply_text = m.reply_to_message.text or ""
+    if "Новое сообщение в поддержку!" in reply_text:
+        try:
+            match = re.search(r"<code>(\d+)</code>", m.reply_to_message.html_text)
+            if match:
+                client_id = int(match.group(1))
+                await bot.send_message(client_id, f"🆘 <b>Ответ поддержки:</b>\n\n{m.text}")
+                await m.answer("✅ Ответ отправлен клиенту!")
+            else:
+                await m.answer("❌ Не удалось найти ID клиента в сообщении.")
+        except Exception as e:
+            await m.answer(f"❌ Ошибка при отправке: {e}")
 # ================================================================ run
 
 
