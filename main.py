@@ -234,14 +234,25 @@ async def show(target, text: str, kb=None, img: str | None = None):
 
 async def main_kb():
     kb = InlineKeyboardBuilder()
+    
+    # Ряд 1: Покупки
     kb.button(text="⭐ Купить звёзды", callback_data="buy")
-    kb.button(text="💎 Telegram Premium", callback_data="prod:premium")
+    kb.button(text="💎 Premium", callback_data="prod:premium")
+    
+    # Ряд 2: Социалка
     kb.button(text="👥 Рефералка", callback_data="ref")
+    kb.button(text="🏆 Топ", callback_data="top")
+    
+    # Ряд 3: Личное
     kb.button(text="👤 Профиль", callback_data="profile")
-    kb.button(text="💬 Отзывы", callback_data="reviews")
-    kb.button(text="🏆 Топ покупателей", callback_data="top")
     kb.button(text="🆘 Поддержка", url=support_url(await get("support")))
-    kb.adjust(2)
+    
+    # Ряд 4: Отзывы (в самом низу)
+    kb.button(text="💬 Отзывы", callback_data="reviews")
+    
+    # Настраиваем: 2 в ряд, 2 в ряд, 2 в ряд, и последняя 1 на всю ширину
+    kb.adjust(2, 2, 2, 1) 
+    
     return kb.as_markup()
 
 
