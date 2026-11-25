@@ -691,7 +691,7 @@ async def reviews(c: CallbackQuery, state: FSMContext):
         
     kb = InlineKeyboardBuilder()
     
-        nav_buttons = []
+    nav_buttons = []
     
     # Левая стрелка (если не первая страница)
     if page > 0:
