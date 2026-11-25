@@ -679,14 +679,14 @@ async def reviews(c: CallbackQuery, state: FSMContext):
     nav_buttons = []
     
     if page > 0:
-        nav_buttons.append(InlineKeyboardButton(text="<", callback_data=f"reviews:{page - 1}"))
+        nav_buttons.append(InlineKeyboardButton(text="◀️", callback_data=f"reviews:{page - 1}"))
     else:
         nav_buttons.append(InlineKeyboardButton(text=" ", callback_data="ignore"))
         
     nav_buttons.append(InlineKeyboardButton(text=f"{page + 1} / {max(total_pages, 1)}", callback_data="ignore"))
     
     if page < total_pages - 1:
-        nav_buttons.append(InlineKeyboardButton(text=">", callback_data=f"reviews:{page + 1}"))
+        nav_buttons.append(InlineKeyboardButton(text="▶️", callback_data=f"reviews:{page + 1}"))
     else:
         nav_buttons.append(InlineKeyboardButton(text=" ", callback_data="ignore"))
 
