@@ -239,6 +239,7 @@ async def main_kb():
     kb.button(text="👥 Рефералка", callback_data="ref")
     kb.button(text="👤 Профиль", callback_data="profile")
     kb.button(text="💬 Отзывы", callback_data="reviews")
+    kb.button(text="🏆 Топ покупателей", callback_data="top")
     kb.button(text="🆘 Поддержка", url=support_url(await get("support")))
     kb.adjust(2)
     return kb.as_markup()
@@ -1076,7 +1077,34 @@ async def hide_review(c: CallbackQuery):
         pass
     await c.answer("Отзыв скрыт")
 
+@router.callback_query(F.data == "top")
+async def top_buyers(c: CallbackQuery, state: FSMContext):
+    await state.clear()
+    
+    cur = await db.execute(
+        "SELECT first_name, SUM(price) as total_spent FROM orders "
+        "WHERE status='done' GROUP BY user_id ORDER BY total_spent DESC LIMIT 5"
+    )
+    rows = await cur.fetchall()
+    
+    text = "🏆 <b>ТОП ПОКУПАТЕЛЕЙ</b>\n\n"
+    if rows:
+        medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"]
+        for i, r in enumerate(rows):
+            name = r['first_name'] or "Анонимный клиент"
+            safe_name = esc(name)
+            spent = money(r['total_spent'])
+            text += f"{medals[i]} {safe_name} — <b>{spent}</b>\n"
+        
+        text += "\n🎁 <i>Топ-1 получает 50 ⭐ в подарок каждый месяц!</i>\n"
+        text += "🚀 <i>Стань лучшим и забери приз!</i>"
+    else:
+        text += "Пока нет выполненных заказов.\n\n🚀 <i>Стань первым в списке!</i>"
 
+    kb = InlineKeyboardBuilder()
+    kb.button(text="⬅️ Назад", callback_data="menu")
+    
+    await show(c, text, kb.as_markup(), img="menu")
 # ================================================================ run
 
 
