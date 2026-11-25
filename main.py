@@ -663,9 +663,10 @@ async def reviews(c: CallbackQuery, state: FSMContext):
                 try:
                     msk_tz = timezone(timedelta(hours=3))
                     dt = datetime.fromisoformat(r["created"]).replace(tzinfo=timezone.utc).astimezone(msk_tz)
-                    date_str = f" <i>({dt.strftime('%d.%m.%Y %H:%M')} по мск)<i>"
+                    date_str = f" ({dt.strftime('%d.%m.%Y %H:%M')} по мск)"
                 except:
                     pass
+            
             line = f"{'⭐' * r['rating']} <b>{esc(r['name'])}</b>{date_str}"
             if r["text"]:
                 line += f"\n{esc(r['text'])}"
