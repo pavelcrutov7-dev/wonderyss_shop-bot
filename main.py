@@ -3,7 +3,7 @@ import html
 import logging
 import os
 import re
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 import aiosqlite
 from aiogram import Bot, Dispatcher, F, Router
@@ -661,8 +661,9 @@ async def reviews(c: CallbackQuery, state: FSMContext):
             date_str = ""
             if r["created"]:
                 try:
-                    dt = datetime.fromisoformat(r["created"])
-                    date_str = f" <i>({dt.strftime('%d.%m.%Y %H:%M')})</i>"
+                    msk_tz = timezone(timedelta(hours=3))
+                    dt = datetime.fromisoformat(r["created"]).replace(tzinfo=timezone.utc).astimezone(msk_tz)
+                    date_str = f" <i>({dt.strftime('%d.%m.%Y %H:%M')} по мск)<i>"
                 except:
                     pass
             line = f"{'⭐' * r['rating']} <b>{esc(r['name'])}</b>{date_str}"
