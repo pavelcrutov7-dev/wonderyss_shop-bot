@@ -239,18 +239,18 @@ async def main_kb():
     kb.button(text="⭐ Купить звёзды", callback_data="buy")
     kb.button(text="💎 Premium", callback_data="prod:premium")
     
-    # Ряд 2: Социалка
-    kb.button(text="👥 Рефералка", callback_data="ref")
+    # Ряд 2: Социалка (ТУТ МЕНЯЕМ ЭМОДЗИ)
+    kb.button(text="🤝 Рефералка", callback_data="ref") # Поменяли 👥 на 🤝
     kb.button(text="🏆 Топ", callback_data="top")
     
     # Ряд 3: Личное
-    kb.button(text="👤 Профиль", callback_data="profile")
+    kb.button(text="👤 Профиль", callback_data="profile") # Оставили одного человечка
     kb.button(text="🆘 Поддержка", url=support_url(await get("support")))
     
     # Ряд 4: Отзывы (в самом низу)
     kb.button(text="💬 Отзывы", callback_data="reviews")
     
-    # Настраиваем: 2 в ряд, 2 в ряд, 2 в ряд, и последняя 1 на всю ширину
+    # Настраиваем: 2, 2, 2, 1 (три ряда по 2 кнопки и последняя на всю ширину)
     kb.adjust(2, 2, 2, 1) 
     
     return kb.as_markup()
